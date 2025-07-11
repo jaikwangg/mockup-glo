@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRNG Lottery System - Live Draw</title>
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: auto; background-color: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+        .header h1 { color: #0066CC; margin: 0; font-size: 2em; }
+        .header .user-info { font-size: 1em; color: #555; }
+        .draw-area { text-align: center; margin-bottom: 30px; }
+        .draw-area h2 { color: #0066CC; font-size: 2.2em; margin-bottom: 20px; }
+        .draw-numbers { display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; }
+        .number-box { background-color: #FFD700; color: #0066CC; width: 100px; height: 100px; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 3em; font-weight: bold; border: 3px solid #e6c200; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .draw-status { background-color: #e6f7ff; border: 1px solid #91d5ff; border-radius: 8px; padding: 15px 20px; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; font-size: 1.1em; font-weight: bold; color: #0056b3; }
+        .draw-status .icon { margin-right: 10px; font-size: 1.5em; } /* For checkmark/spinner */
+        .process-flow { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
+        .process-step { flex: 1; text-align: center; padding: 15px; background-color: #f0f8ff; border-radius: 10px; border: 1px solid #d0eaff; margin: 0 10px; position: relative; }
+        .process-step.active { background-color: #e6f7ff; border-color: #91d5ff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .process-step.completed { background-color: #e6ffe6; border-color: #a3e9a4; }
+        .process-step h3 { color: #0066CC; font-size: 1.2em; margin-top: 0; margin-bottom: 10px; }
+        .process-step p { font-size: 0.9em; color: #555; }
+        .process-step .status-icon { font-size: 2em; margin-bottom: 10px; color: #ccc; }
+        .process-step.active .status-icon { color: #0066CC; animation: spin 2s linear infinite; }
+        .process-step.completed .status-icon { color: #4CAF50; animation: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .process-arrow { position: absolute; top: 50px; right: -30px; width: 50px; text-align: center; color: #ccc; font-size: 2em; }
+        .draw-controls { display: flex; justify-content: center; gap: 20px; margin-top: 30px; }
+        .btn-draw { background-color: #4CAF50; color: white; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 1.2em; font-weight: bold; transition: background-color 0.3s ease; }
+        .btn-draw:hover { background-color: #45a049; }
+        .btn-reset { background-color: #f44336; }
+        .btn-reset:hover { background-color: #da190b; }
+        .draw-results-table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+        .draw-results-table th, .draw-results-table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        .draw-results-table th { background-color: #0066CC; color: white; font-weight: bold; }
+        .draw-results-table td { background-color: #f9f9f9; }
+        .draw-results-table tr:nth-child(even) td { background-color: #f2f2f2; }
+        .quantum-verified { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 10px 15px; border-radius: 8px; margin-top: 20px; font-weight: bold; text-align: center; display: flex; align-items: center; justify-content: center; }
+        .quantum-verified i { margin-right: 10px; font-size: 1.2em; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ระบบออกรางวัลสลากด้วย QRNG</h1>
+            <div class="user-info">
+                สวัสดี, **เจ้าหน้าที่ ก (GLO)** | <a href="#" style="color:#0066CC;">ออกจากระบบ</a>
+            </div>
+        </div>
+
+        <div class="draw-area">
+            <h2>การออกรางวัลสลากประจำงวดที่ 15 / 16 กรกฎาคม 2568</h2>
+            <div class="draw-status">
+                <span class="icon"><i class="fas fa-spinner fa-spin"></i></span> สถานะ: กำลังดำเนินการสุ่มเลขรางวัลที่ 1
+            </div>
+
+            <div class="draw-numbers">
+                <div class="number-box"></div>
+                <div class="number-box"></div>
+                <div class="number-box"></div>
+                <div class="number-box"></div>
+                <div class="number-box"></div>
+                <div class="number-box"></div>
+            </div>
+            <div class="quantum-verified" style="display: none;">
+                <i class="fas fa-check-circle"></i> ผลลัพธ์ได้รับการยืนยันโดย Quantum Source และ PQC
+            </div>
+            
+            <div class="draw-controls">
+                <button class="btn-draw" onclick="startDraw()">เริ่มการสุ่ม</button>
+                <button class="btn btn-reset" onclick="resetDraw()">ยกเลิกการสุ่ม</button>
+            </div>
+        </div>
+
+        <div class="process-flow">
+            <div class="process-step active" id="step-qrng">
+                <h3>1. สุ่มด้วย QRNG</h3>
+                <span class="status-icon"><i class="fas fa-atom"></i></span>
+                <p>สร้างตัวเลขสุ่มแท้จริงจากแหล่งควอนตัม</p>
+            </div>
+            <div class="process-arrow"><i class="fas fa-arrow-right"></i></div>
+            <div class="process-step" id="step-pqc">
+                <h3>2. เข้ารหัส PQC</h3>
+                <span class="status-icon"><i class="fas fa-lock"></i></span>
+                <p>บันทึกและเข้ารหัสผลลัพธ์ด้วย Post-Quantum Cryptography</p>
+            </div>
+            <div class="process-arrow"><i class="fas fa-arrow-right"></i></div>
+            <div class="process-step" id="step-verify">
+                <h3>3. ตรวจสอบ & บันทึก</h3>
+                <span class="status-icon"><i class="fas fa-check-double"></i></span>
+                <p>ระบบ AI ตรวจสอบความสอดคล้องและบันทึกลง Log</p>
+            </div>
+            <div class="process-arrow"><i class="fas fa-arrow-right"></i></div>
+            <div class="process-step" id="step-publish">
+                <h3>4. ประกาศผล</h3>
+                <span class="status-icon"><i class="fas fa-bullhorn"></i></span>
+                <p>แสดงผลลัพธ์แบบเรียลไทม์ และเผยแพร่สู่สาธารณะ</p>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 30px;">
+            <h2>ผลการออกรางวัลประจำงวด</h2>
+            <table class="draw-results-table">
+                <thead>
+                    <tr>
+                        <th>ประเภทรางวัล</th>
+                        <th>ผลตัวเลข</th>
+                        <th>เวลาสุ่ม</th>
+                        <th>Quantum ID / Hash</th>
+                        <th>สถานะการยืนยัน</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>รางวัลที่ 1</td>
+                        <td id="result-r1">XXXXXX</td>
+                        <td id="time-r1">--:--:--</td>
+                        <td id="hash-r1">รอการสุ่ม</td>
+                        <td id="status-r1"><span style="color:#FFC107;">รอสุ่ม</span></td>
+                    </tr>
+                    <tr>
+                        <td>เลขหน้า 3 ตัว (ครั้งที่ 1)</td>
+                        <td id="result-f3-1">XXX</td>
+                        <td id="time-f3-1">--:--:--</td>
+                        <td id="hash-f3-1">รอการสุ่ม</td>
+                        <td id="status-f3-1"><span style="color:#FFC107;">รอสุ่ม</span></td>
+                    </tr>
+                    <tr>
+                        <td>เลขหน้า 3 ตัว (ครั้งที่ 2)</td>
+                        <td id="result-f3-2">XXX</td>
+                        <td id="time-f3-2">--:--:--</td>
+                        <td id="hash-f3-2">รอการสุ่ม</td>
+                        <td id="status-f3-2"><span style="color:#FFC107;">รอสุ่ม</span></td>
+                    </tr>
+                    <tr>
+                        <td>เลขท้าย 3 ตัว (ครั้งที่ 1)</td>
+                        <td id="result-b3-1">XXX</td>
+                        <td id="time-b3-1">--:--:--</td>
+                        <td id="hash-b3-1">รอการสุ่ม</td>
+                        <td id="status-b3-1"><span style="color:#FFC107;">รอสุ่ม</span></td>
+                    </tr>
+                    <tr>
+                        <td>เลขท้าย 3 ตัว (ครั้งที่ 2)</td>
+                        <td id="result-b3-2">XXX</td>
+                        <td id="time-b3-2">--:--:--</td>
+                        <td id="hash-b3-2">รอการสุ่ม</td>
+                        <td id="status-b3-2"><span style="color:#FFC107;">รอสุ่ม</span></td>
+                    </tr>
+                    <tr>
+                        <td>เลขท้าย 2 ตัว</td>
+                        <td id="result-b2">XX</td>
+                        <td id="time-b2">--:--:--</td>
+                        <td id="hash-b2">รอการสุ่ม</td>
+                        <td id="status-b2"><span style="color:#FFC107;">รอสุ่ม</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Simulate the draw process for demonstration
+        let currentDraw = 0;
+        const prizeOrder = ['รางวัลที่ 1', 'เลขหน้า 3 ตัว (ครั้งที่ 1)', 'เลขหน้า 3 ตัว (ครั้งที่ 2)', 'เลขท้าย 3 ตัว (ครั้งที่ 1)', 'เลขท้าย 3 ตัว (ครั้งที่ 2)', 'เลขท้าย 2 ตัว'];
+        const numBoxes = document.querySelectorAll('.number-box');
+        const drawStatus = document.querySelector('.draw-status');
+        const quantumVerified = document.querySelector('.quantum-verified');
+        const processSteps = {
+            qrng: document.getElementById('step-qrng'),
+            pqc: document.getElementById('step-pqc'),
+            verify: document.getElementById('step-verify'),
+            publish: document.getElementById('step-publish')
+        };
+        const resultCells = {
+            'รางวัลที่ 1': { num: 'result-r1', time: 'time-r1', hash: 'hash-r1', status: 'status-r1' },
+            'เลขหน้า 3 ตัว (ครั้งที่ 1)': { num: 'result-f3-1', time: 'time-f3-1', hash: 'hash-f3-1', status: 'status-f3-1' },
+            'เลขหน้า 3 ตัว (ครั้งที่ 2)': { num: 'result-f3-2', time: 'time-f3-2', hash: 'hash-f3-2', status: 'status-f3-2' },
+            'เลขท้าย 3 ตัว (ครั้งที่ 1)': { num: 'result-b3-1', time: 'time-b3-1', hash: 'hash-b3-1', status: 'status-b3-1' },
+            'เลขท้าย 3 ตัว (ครั้งที่ 2)': { num: 'result-b3-2', time: 'time-b3-2', hash: 'hash-b3-2', status: 'status-b3-2' },
+            'เลขท้าย 2 ตัว': { num: 'result-b2', time: 'time-b2', hash: 'hash-b2', status: 'status-b2' },
+        };
+
+        function generateRandomNumber(length) {
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += Math.floor(Math.random() * 10);
+            }
+            return result;
+        }
+
+        function simulateStep(stepId, duration, callback) {
+            Object.values(processSteps).forEach(step => step.classList.remove('active', 'completed'));
+            processSteps[stepId].classList.add('active');
+            drawStatus.innerHTML = `<span class="icon"><i class="fas fa-spinner fa-spin"></i></span> สถานะ: กำลัง${processSteps[stepId].querySelector('h3').textContent.replace(/^\d+\.\s*/, '')}...`;
+            setTimeout(() => {
+                processSteps[stepId].classList.remove('active');
+                processSteps[stepId].classList.add('completed');
+                callback();
+            }, duration);
+        }
+
+        function startDraw() {
+            if (currentDraw >= prizeOrder.length) {
+                drawStatus.innerHTML = `<span class="icon"><i class="fas fa-check-circle"></i></span> สถานะ: ออกรางวัลครบทุกประเภทแล้ว!`;
+                alert('ออกรางวัลครบทุกประเภทแล้ว!');
+                return;
+            }
+
+            const prizeName = prizeOrder[currentDraw];
+            let numLength;
+            if (prizeName === 'รางวัลที่ 1') numLength = 6;
+            else if (prizeName.includes('3 ตัว')) numLength = 3;
+            else if (prizeName.includes('2 ตัว')) numLength = 2;
+
+            numBoxes.forEach(box => box.textContent = ''); // Clear current numbers
+            quantumVerified.style.display = 'none';
+
+            // Step 1: QRNG
+            simulateStep('qrng', 1000, () => {
+                const generatedNum = generateRandomNumber(numLength);
+                numBoxes.forEach((box, index) => {
+                    if (index < generatedNum.length) {
+                        box.textContent = generatedNum[index];
+                    } else {
+                        box.textContent = ''; // Clear unused boxes
+                    }
+                });
+
+                // Step 2: PQC
+                simulateStep('pqc', 800, () => {
+                    // Step 3: Verify & Log
+                    simulateStep('verify', 700, () => {
+                        const hash = `0x${generateRandomNumber(8)}...`; // Simulate hash
+                        const currentTime = new Date().toLocaleTimeString('th-TH');
+
+                        document.getElementById(resultCells[prizeName].num).textContent = generatedNum;
+                        document.getElementById(resultCells[prizeName].time).textContent = currentTime;
+                        document.getElementById(resultCells[prizeName].hash).textContent = hash;
+                        document.getElementById(resultCells[prizeName].status).innerHTML = `<span style="color:#4CAF50;">ยืนยันแล้ว</span>`;
+
+                        quantumVerified.style.display = 'flex'; // Show verified badge
+
+                        // Step 4: Publish
+                        simulateStep('publish', 500, () => {
+                            drawStatus.innerHTML = `<span class="icon"><i class="fas fa-check-circle"></i></span> สถานะ: ออกรางวัล **${prizeName}** เสร็จสมบูรณ์!`;
+                            currentDraw++;
+                            // Reset process steps for next draw
+                            Object.values(processSteps).forEach(step => step.classList.remove('active', 'completed'));
+                            if (currentDraw < prizeOrder.length) {
+                                document.querySelector('.btn-draw').textContent = `สุ่ม ${prizeOrder[currentDraw]}`;
+                            } else {
+                                document.querySelector('.btn-draw').style.display = 'none';
+                                drawStatus.innerHTML = `<span class="icon"><i class="fas fa-check-circle"></i></span> สถานะ: ออกรางวัลครบทุกประเภทแล้ว!`;
+                            }
+                        });
+                    });
+                });
+            });
+        }
+
+        function resetDraw() {
+            if (confirm('คุณต้องการรีเซ็ตการออกรางวัลสำหรับงวดนี้หรือไม่?')) {
+                currentDraw = 0;
+                numBoxes.forEach(box => box.textContent = '');
+                quantumVerified.style.display = 'none';
+                drawStatus.innerHTML = `<span class="icon"><i class="fas fa-play-circle"></i></span> สถานะ: พร้อมเริ่มการออกรางวัล`;
+                Object.values(processSteps).forEach(step => step.classList.remove('active', 'completed'));
+                document.querySelector('.btn-draw').textContent = `เริ่มการสุ่ม`;
+                document.querySelector('.btn-draw').style.display = 'inline-block';
+
+                // Reset table
+                for (const prize in resultCells) {
+                    document.getElementById(resultCells[prize].num).textContent = prize.includes('1') ? 'XXXXXX' : (prize.includes('3') ? 'XXX' : 'XX');
+                    document.getElementById(resultCells[prize].time).textContent = '--:--:--';
+                    document.getElementById(resultCells[prize].hash).textContent = 'รอการสุ่ม';
+                    document.getElementById(resultCells[prize].status).innerHTML = '<span style="color:#FFC107;">รอสุ่ม</span>';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
